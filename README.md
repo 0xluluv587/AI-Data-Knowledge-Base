@@ -44,6 +44,52 @@
 | is_adjust | tinyint | 是否需要净值修改（1:需要，2:不需要） |
 | apy_days | int64 | APY计算天数 |
 | risk_is_suspicious | tinyint | 风控是否可疑 |
+  - `product_statistical_data` 产品统计数据表，该表数据会根据净值实时进行更新，记录产品的各种收益率、波动率、人气值等统计数据。字段描述：
+
+| 字段名 | 类型 | 描述 |
+|--------|------|------|
+| id | int64 | 主键ID |
+| created_at | int64 | 创建时间（毫秒时间戳） |
+| updated_at | int64 | 更新时间（毫秒时间戳） |
+| product_id | varchar(64) | 产品ID，唯一索引 |
+| volatility | decimal(38,18) | 波动率，净值更新后同步更新 |
+| holdings | int | 持有该产品的人数 |
+| x_day_apy | decimal(38,18) | X天APY，X为产品配置的天数 |
+| apy_7d | decimal(38,18) | 7天年化收益率 |
+| apy_30d | decimal(38,18) | 30天年化收益率 |
+| apy_60d | decimal(38,18) | 60天年化收益率 |
+| apy_90d | decimal(38,18) | 90天年化收益率 |
+| apy_180d | decimal(38,18) | 180天年化收益率 |
+| apy1year | decimal(38,18) | 1年年化收益率 |
+| inception_to_date_apy | decimal(38,18) | 成立至今年化收益率 |
+| apy_ytd | decimal(38,18) | 年初至今年化收益率 |
+| return_7d | decimal(38,18) | 7天收益率 |
+| return_30d | decimal(38,18) | 30天收益率 |
+| return_60d | decimal(38,18) | 60天收益率 |
+| return_90d | decimal(38,18) | 90天收益率 |
+| return_180d | decimal(38,18) | 180天收益率 |
+| return1year | decimal(38,18) | 1年收益率 |
+| return_since_inception | decimal(38,18) | 成立至今收益率 |
+| ytd_return | decimal(38,18) | 年初至今收益率 |
+| maximum_drawdown_7d | decimal(38,18) | 7天最大回撤 |
+| maximum_drawdown_30d | decimal(38,18) | 30天最大回撤 |
+| maximum_drawdown_60d | decimal(38,18) | 60天最大回撤 |
+| maximum_drawdown_90d | decimal(38,18) | 90天最大回撤 |
+| maximum_drawdown_180d | decimal(38,18) | 180天最大回撤 |
+| maximum_drawdown_1y | decimal(38,18) | 1年最大回撤 |
+| maximum_drawdown_ytd | decimal(38,18) | 年初至今最大回撤 |
+| maximum_since_inception | decimal(38,18) | 成立至今最大回撤 |
+| popularity_value_7d | decimal(38,18) | 7天人气值 |
+| popularity_value_30d | decimal(38,18) | 30天人气值 |
+| popularity_value_60d | decimal(38,18) | 60天人气值 |
+| popularity_value_90d | decimal(38,18) | 90天人气值 |
+| popularity_value_180d | decimal(38,18) | 180天人气值 |
+| popularity_value_1y | decimal(38,18) | 1年人气值 |
+| popularity_value_inception | decimal(38,18) | 成立至今人气值 |
+| popularity_value_ytd | decimal(38,18) | 年初至今人气值 |
+| quick_tag_ids | varchar(256) | 快速标签ID |
+| since_inception_days | int | 成立以来的天数 |
+| running_days | int | 产品运行天数 |
 
   - `riskmgt.risk_fund_strategies_info_draft` 包含基金的小时级数据，通常提取天级别数据时应参考每日UTC 00:00的数据(如有）；也包含基金的标签信息
   - `rcu_info_draft` 包含基金名称等信息
