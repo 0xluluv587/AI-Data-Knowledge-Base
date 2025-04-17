@@ -13,6 +13,37 @@
 ### 数据库结构
 - **服务器**: mcp服务器用于访问starrocks数据库
 - **主要数据表**:
+  - `riskmgt.fund_nav` 基金净值表，存储产品的净值历史数据，包括日常净值、年化收益等信息。是基金产品价值评估和收益计算的核心数据表。字段描述：
+| 字段名 | 类型 | 描述 |
+|--------|------|------|
+| id | int64 | 主键ID |
+| created_at | int64 | 创建时间（毫秒时间戳） |
+| updated_at | int64 | 更新时间（毫秒时间戳） |
+| rcu_id | int64 | 账户ID，关联到RCU账户 |
+| day_timestamp | int64 | 日期时间戳，表示该天UTC 0点的时间戳（毫秒） |
+| nav | decimal(38,18) | 净值，某天的申购净值/申购价格 |
+| before_fee_nav | decimal(38,18) | 费前净值，风控费前的净值 |
+| amended_nav | decimal(38,18) | 修正净值，对原始净值进行修正后的值 |
+| product_id | varchar(64) | 产品ID |
+| time_stamp | int64 | 净值时间戳，精确到净值更新的具体时间点 |
+| is_daily_first | tinyint | 是否是当天第一条有效净值（1:是，2:否） |
+| product_name | varchar(128) | 产品名称 |
+| currency | varchar(128) | 产品币种 |
+| snapshot_id | varchar(64) | 快照ID |
+| apy_return | decimal(38,18) | 年化收益率 |
+| reported_nav | decimal(38,18) | 已报告净值 |
+| aum | decimal(38,18) | 资产管理规模（Assets Under Management） |
+| is_back_test_data | tinyint | 是否是回测数据（1:是，2:否） |
+| has_apy | tinyint | 是否有年化收益率（1:是，2:否） |
+| has_return | tinyint | 是否有收益率（1:是，2:否） |
+| status | int32 | 净值状态（1:正常，2:异常，3:自动计算关闭，4:延迟显示，5:隐藏） |
+| is_settled_nav | tinyint | 是否是结算净值（1:是，2:否），用于业绩提取点 |
+| shares | decimal(38,18) | 总份额（劣后份额+优先份额） |
+| update_mode | int32 | 更新模式（1:系统更新，2:人工更新） |
+| is_adjust | tinyint | 是否需要净值修改（1:需要，2:不需要） |
+| apy_days | int64 | APY计算天数 |
+| risk_is_suspicious | tinyint | 风控是否可疑 |
+
   - `riskmgt.risk_fund_strategies_info_draft` 包含基金的小时级数据，通常提取天级别数据时应参考每日UTC 00:00的数据(如有）；也包含基金的标签信息
   - `rcu_info_draft` 包含基金名称等信息
   - `rcu_lable` 包含基金标签等信息
