@@ -104,7 +104,9 @@
     - 主观交易策略(Discretionary Trading)
     - CTA趋势策略(CTA)
     - 混合型策略(Hybrid Strategy)
-- using lable_list in risk_fund_strategies_info_draft to determining whether a strategy is public. 
+- using lable_list in risk_fund_strategies_info_draft to determining whether a strategy is public.
+- 基于业务系统数据查询某个策略的每日有效NAV数据案例：
+  select fn.* from ( select *, ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY time_stamp DESC) as row_num from fund_two.fund_nav fn where is_daily_first = 1 and status = 1 and not (upper(fn.product_name) like '%TEST%' or fn.product_name like '%测试%') ) fn left join fund_two.product p on fn.product_id = p.product_id where row_num = 1 and p.status != 3
 - 查询特定类型的基金/策略时需要关联多表进行查询，比如要查询多空类策略：
   select rcus.* from rcus, rcu_label, rcu_to_rcu_label where rcus.id = rcu_to_rcu_label.rcu_id and rcu_to_rcu_label.rcu_label_id = rcu_label.id and rcu_label.`name` = "longshort"
   **策略类型标签映射表**
@@ -114,6 +116,8 @@
   | 套利策略 | "arbitrage", "Arbitrage" | 包含"套利"、"Arbitrage" |
   | CTA策略 | "CTA", "trend", "cta" | 包含"CTA"、"趋势" |
   | 做市策略 | "market_making", "mm" | 包含"MM"、"做市"、"Market Making" |
+
+  
 
 ## 2. 基金业绩与风险指标
 > 以下指标基于UTC+0 0点的daily NAV计算
