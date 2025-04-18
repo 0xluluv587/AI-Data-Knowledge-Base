@@ -44,6 +44,7 @@
 | is_adjust | tinyint | 是否需要净值修改（1:需要，2:不需要） |
 | apy_days | int64 | APY计算天数 |
 | risk_is_suspicious | tinyint | 风控是否可疑 |
+
   - `product_statistical_data` 产品统计数据表，该表数据会根据净值实时进行更新，记录产品的各种收益率、波动率、人气值等统计数据。字段描述：
 
 | 字段名 | 类型 | 描述 |
@@ -91,8 +92,118 @@
 | since_inception_days | int | 成立以来的天数 |
 | running_days | int | 产品运行天数 |
 
+  - `product` 产品基础信息表，存储产品的核心信息，如名称、币种、策略、风险等级等。是基金管理系统中的核心表之一。字段描述：
+
+| 字段名 | 类型 | 描述 |
+|--------|------|------|
+| id | int64 | 主键ID |
+| created_at | int64 | 创建时间（毫秒时间戳） |
+| updated_at | int64 | 更新时间（毫秒时间戳） |
+| deleted_at | datetime | 删除时间，用于软删除 |
+| product_id | varchar(64) | 产品ID，唯一索引 |
+| product_code | varchar(20) | 产品代码 |
+| product_name | varchar(128) | 产品名称 |
+| currency | varchar(128) | 产品币种 |
+| strategy_id | varchar(64) | 策略ID |
+| status | tinyint | 产品状态（1:未上架，2:已上架） |
+| is_stop_raise | tinyint | 是否停止募集（1:是，2:否） |
+| risk_level | tinyint | 风险等级（1-5级） |
+| btc_perf_start_time | int64 | BTC性能开始时间 |
+| nav_start_time | int64 | 净值开始时间 |
+| listing_time | int64 | 上架时间 |
+| is_customized | tinyint | 是否定制化策略（1:是，2:否） |
+| is_private_strategy | tinyint | 是否私有策略（1:是，2:否） |
+| rcu_id | int64 | 账户ID |
+| pb_user_id | varchar(64) | PB用户ID |
+| rcs_id | int64 | RCS系统ID |
+| ex_account_ids | text | 交易所账户ID列表 |
+| fund_manager_id | varchar(64) | 基金经理ID |
+| weight | int64 | 权重，用于排序 |
+| apy_display_rule | tinyint | APY显示规则（0:成立至今APY，1:预期APY，2:X天APY） |
+| number_of_x_day | int | APY计算天数，当display_rule=2时使用 |
+| expected_apy | decimal(38,18) | 预期年化收益率 |
+| bitcoin_performance | tinyint | 是否显示比特币表现（1:是，2:否） |
+| min_subscription_amount | decimal(38,18) | 最低认购金额 |
+| user_daily_subscription_limit | decimal(38,18) | 用户每日认购限额 |
+| user_subscription_limit | decimal(38,18) | 用户认购总限额 |
+| is_launchpad | tinyint | 是否为首发产品（1:是，2:否） |
+| min_redemption_shares | decimal(38,18) | 最低赎回份额 |
+
+  - `product_label` 产品标签表，用于存储产品的各种标签信息，如风险类型、投资方向等，帮助用户更好地筛选产品。字段描述：
+
+| 字段名 | 类型 | 描述 |
+|--------|------|------|
+| id | int64 | 主键ID |
+| created_at | int64 | 创建时间（毫秒时间戳） |
+| updated_at | int64 | 更新时间（毫秒时间戳） |
+| deleted_at | datetime | 删除时间，用于软删除 |
+| product_id | varchar(64) | 产品ID，索引 |
+| product_label_id | varchar(64) | 产品标签ID，唯一索引 |
+
+  - `product_content` 产品内容表，存储产品的详细描述信息，如策略说明、团队背景、交易场所等多语言内容，丰富产品的展示信息。字段描述：
+
+| 字段名 | 类型 | 描述 |
+|--------|------|------|
+| id | int64 | 主键ID |
+| created_at | int64 | 创建时间（毫秒时间戳） |
+| updated_at | int64 | 更新时间（毫秒时间戳） |
+| deleted_at | datetime | 删除时间，用于软删除 |
+| product_id | varchar(64) | 产品ID，唯一索引 |
+| team_background_url | text | 团队背景图片URL |
+| broker_page_url | text | 经纪商页面URL |
+| performance_display | tinyint | 表现显示类型（1:追踪回报，2:每日收益） |
+| performance_display_pnl | tinyint | 是否显示盈亏（1:是，2:否） |
+| private_strategy_visibility | tinyint | 私有策略可见性（0:仅代码持有者可见，1:完全可见） |
+| currency_positions_analysis | uint32 | 货币持仓分析（位掩码字段） |
+| trade_history_positions_analysis | uint32 | 交易历史持仓分析（位掩码字段） |
+| investment_history | uint32 | 投资历史（位掩码字段） |
+| personal_profile_display | tinyint | 个人简介显示（1:显示，2:不显示） |
+| broker_page_redirect | tinyint | 经纪商页面重定向（1:重定向，2:不重定向） |
+
+  - `product_strategy` 产品策略表，定义不同的投资策略类型及其特性，为产品提供策略分类和规则。字段描述：
+
+| 字段名 | 类型 | 描述 |
+|--------|------|------|
+| id | int64 | 主键ID |
+| created_at | int64 | 创建时间（毫秒时间戳） |
+| updated_at | int64 | 更新时间（毫秒时间戳） |
+| deleted_at | datetime | 删除时间，用于软删除 |
+| strategy_id | varchar(64) | 策略ID，唯一索引 |
+| name | varchar(128) | 策略名称 |
+| weight | int64 | 权重，用于排序 |
+| picture | text | 策略图片URL |
+| nav_abnormal_ratio | decimal(38,18) | 净值异常比例 |
+| up_nav_abnormal_ratio | decimal(38,18) | 上升净值异常比例 |
+| down_nav_abnormal_ratio | decimal(38,18) | 下降净值异常比例 |
+| is_migrate | tinyint | 是否已迁移（0:否，1:是） |
+
+  - `i18n` 国际化表，存储系统中需要多语言支持的文本内容，如产品名称、描述等，支持系统的国际化和本地化。字段描述：
+
+| 字段名 | 类型 | 描述 |
+|--------|------|------|
+| id | int64 | 主键ID |
+| created_at | int64 | 创建时间（毫秒时间戳） |
+| updated_at | int64 | 更新时间（毫秒时间戳） |
+| entity_id | varchar(64) | 实体ID，如产品ID、策略ID等 |
+| locale_type | uint32 | 本地化类型，标识文本的用途 |
+| language | varchar(10) | 语言代码，如zh-CN, en-US等 |
+| text | text | 翻译文本内容 |
+
   - `riskmgt.risk_fund_strategies_info_draft` 包含基金的小时级数据，通常提取天级别数据时应参考每日UTC 00:00的数据(如有）；也包含基金的标签信息
-  - `rcu_info_draft` 包含基金名称等信息
+  - `riskmgt.rcu_info_draft` 包含基金名称等信息
+    - 主键: rcu_id
+    - 主要字段: name, quotes, unit, portfolio_assets(json类型), platform_list(数组类型), label_list(数组类型)
+    - 说明:
+      - portfolio_assets是json类型，元素格式为"总用户投资资产信息"，如{"USDT": "342061.8490047697274239523487"}，查询时需使用GET_JSON_STRING(portfolio_assets, quotes)
+      - platform_list是数组类型，元素格式为"交易所名"，如["okex", "binance"]，查询时需使用以下sql语句：select rcu_id, unnest from riskmgt.rcu_info_draft, unnest(platform_list) as unnest 或可以使用ARRAY_CONTAINS(label_list, '交易所名')
+      - label_list是数组类型，元素格式为"基金label信息"，如["public", "absolute_value"]，查询时需使用以下sql语句：select rcu_id, unnest from riskmgt.rcu_info_draft, unnest(label_list) as unnest或可以使用ARRAY_CONTAINS(label_list, 'label名')
+  - `riskmgt.risk_fund_strategies_info_draft`
+    - 主键: rcu_id + _time
+    - 时间字段: _time (注意：不是date)
+    - 主要字段: name, quotes, adjusted_nav, gross_leverage_ratio, nav, total_asset_value, portfolio_assets(json类型), platform_list(数组类型), label_list(数组类型)
+    - 说明: portfolio_assets(json类型), platform_list(数组类型), label_list(数组类型) 的sql查询方式与 riskmgt.rcu_info_draft 一致
+    - 查询示例：查询Long Short策略：
+<pre> SELECT * FROM riskmgt.risk_fund_strategies_info_draft WHERE ARRAY_CONTAINS(label_list, 'longshort') OR name LIKE '%Long Short%' OR name LIKE '%多空%' </pre>
   - `rcu_lable` 包含基金标签等信息
 - **关键字段**:
   - `adjusted_nav`: 基金净值，也是考虑各种费用、分润和异常情况下的调整后费前净值，用于还原策略的真实表现和盈利能力。
