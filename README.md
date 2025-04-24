@@ -1,5 +1,5 @@
 # AI-Data-Knowledge-Base[AI 金融数据分析知识库]
-本项目旨在构建金融领域AI数据分析的专业知识库，便于AI学习特定领域知识并提供专业回答。当AI回答与基金数据提取、量化策略表现和风险指标分析相关问题时，应首先参考本文档，基于数据结构理解和指标计算标准给出准确回答。如果遇到需要计算本文档里未列出的指标，回答时应注明“此指标未在参考文档里找到公式，仅供参考”""
+本项目旨在构建金融领域AI数据分析的专业知识库，便于AI学习特定领域知识并提供专业回答。当AI回答与基金数据提取、量化策略表现和风险指标分析相关问题时，应首先参考本文档，基于数据结构理解和指标计算标准给出准确回答。如果遇到需要计算本文档里未列出的指标，回答时应注明“此指标未在参考文档里找到公式，仅供参考“
 
 ## 📊 目录
 
@@ -13,7 +13,8 @@
 ### 数据库结构
 - **服务器**: mcp服务器用于访问starrocks数据库
 - **主要数据表**:
-  - `riskmgt.fund_nav` 基金净值表，存储产品的净值历史数据，包括日常净值、年化收益等信息。是基金产品价值评估和收益计算的核心数据表。字段描述：
+
+  - `fund_nav` 业务系统存储的基金费前净值表，存储产品的费前净值(NAV before fee)和费后净值(NAV after fee)历史数据，包括日常净值、年化收益等信息。是基金产品价值评估和收益计算的核心数据表。字段描述：
 
 | 字段名 | 类型 | 描述 |
 |--------|------|------|
@@ -189,7 +190,7 @@
 | language | varchar(10) | 语言代码，如zh-CN, en-US等 |
 | text | text | 翻译文本内容 |
 
-  - `riskmgt.risk_fund_strategies_info_draft` 包含基金的小时级数据，通常提取天级别数据时应参考每日UTC 00:00的数据(如有）；也包含基金的标签信息
+  - `riskmgt.risk_fund_strategies_info_draft` 包含risk业务系统里策略的小时级费前数据，通常提取天级别数据时应参考每日UTC 00:00的数据(如有）；也包含基金的标签信息
   - `riskmgt.rcu_info_draft` 包含基金名称等信息
     - 主键: rcu_id
     - 主要字段: name, quotes, unit, portfolio_assets(json类型), platform_list(数组类型), label_list(数组类型)
@@ -215,23 +216,40 @@
     - 主观交易策略(Discretionary Trading)
     - CTA趋势策略(CTA)
     - 混合型策略(Hybrid Strategy)
-- using lable_list in risk_fund_strategies_info_draft to determining whether a strategy is public.
-- 基于业务系统数据查询某个策略的每日有效NAV数据案例：
-  select fn.* from ( select *, ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY time_stamp DESC) as row_num from fund_two.fund_nav fn where is_daily_first = 1 and status = 1 and not (upper(fn.product_name) like '%TEST%' or fn.product_name like '%测试%') ) fn left join fund_two.product p on fn.product_id = p.product_id where row_num = 1 and p.status != 3
-- 查询特定类型的基金/策略时需要关联多表进行查询，比如要查询多空类策略：
+
+
+
+- **典型应用场景举例**:
+- 1) 查询特定类型的基金/策略时需要关联多表进行查询，比如要查询多空类策略：
   select rcus.* from rcus, rcu_label, rcu_to_rcu_label where rcus.id = rcu_to_rcu_label.rcu_id and rcu_to_rcu_label.rcu_label_id = rcu_label.id and rcu_label.`name` = "longshort"
+  using lable_list in risk_fund_strategies_info_draft to determining whether a strategy is public or private.
   **策略类型标签映射表**
   | 策略类型 | 可能的标签值 | 常见命名模式 |
   |---------|------------|------------|
-  | 多空策略 | "longshort", "Long Short" | 包含"多空"、"Long Short"、"long-short" |
-  | 套利策略 | "arbitrage", "Arbitrage" | 包含"套利"、"Arbitrage" |
-  | CTA策略 | "CTA", "trend", "cta" | 包含"CTA"、"趋势" |
-  | 做市策略 | "market_making", "mm" | 包含"MM"、"做市"、"Market Making" |
+  | 多空策略 | "longshort", "Long Short" | product_strategy 或 Lable中包含"多空"、"Long Short"、"long-short" |
+  | 套利策略 | "arbitrage", "Arbitrage" |  product_strategy 或 Lable中包含"套利"、"活期套利"、"Arbitrage" |
+  | CTA策略 | "CTA", "trend", "cta" |  product_strategy 或 Lable中包含"CTA"、"趋势" |
+  | 做市策略 | "market_making", "mm" |  product_strategy 或 Lable中包含"MM"、"做市"、"Market Making" |
+  | 主观交易策略 | "Discretionary Trading", "Discretionary" |  product_strategy 或 Lable中包含"主观交易"、"主观"、"Discretionary" |
+  | 混合型策略 | "Hybrid" |  product_strategy 或 Lable中包含"Hybrid"、"混合"、"混合型" |
+  | 增强型指数策略 | "Enhanced Index", "Index" |  product_strategy 或 Lable中包含"Enhanced"、"指数"、"Index" |
+  | 期权策略 | "Options Strategy", "Options" |  product_strategy 或 Lable中包含"Options"、"期权" |
+  
+- 2) 基于业务系统数据查询某个策略的每日有效NAV数据案例：
+  > select fn.* from ( select *, ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY time_stamp DESC) as row_num from fund_two.fund_nav fn where is_daily_first = 1 and status = 1 and not (upper(fn.product_name) like '%TEST%' or fn.product_name like '%测试%') ) fn left join fund_two.product p on fn.product_id = p.product_id where row_num = 1 and p.status != 3
+  > 如果要分析费前NAV数据，通常业务系统中的费前 NAV 数据，因为有标记正常/异常、异常阈值的拦截，比riskmgt.risk_fund_strategies_info_draft里的数据更准确可靠一些。必要的情况可以可以两份数据对比参考。
+  
 
+- 3) 统计[xxx 指标]从好到差排名N名以内的某类策略的表现和报告：
+  > 可优先查看 `product_statistical_data` 产品统计数据表里是否有现成的指标，比如“30天收益率前10名套利策略”，如果有的话直接用业务系统计算好的数据进行排名，效率更高，可以避免重新全量策略便利的工作量。
+  > 确定了要分析的策略列表后，再根据需求内容和数据库中的数据进行具体分析
   
 
 ## 2. 基金业绩与风险指标
-> 以下指标基于UTC+0 0点的daily NAV计算
+> 如无特别说明，以下指标默认基于业务系统`fund_nav`里 UTC+0 0点的有效费后净值(NAV after fee)计算；
+> 而如果提示词里指明希望看策略的费前表现，应该基于业务系统`fund_nav`里 UTC+0 0点的有效的休正后费前净值(amended_nav)计算；
+> 有效费后NAV和amended_nav都可参考“典型应用场景举例”中的“2)基于业务系统数据查询某个策略的每日有效NAV数据案例”)
+
 ### 收益率指标 Return
 
 | 指标 | 计算公式 |
@@ -253,7 +271,7 @@
 
 | 时间区间 | 计算公式 |
 |---------|---------|
-| 成立以来/7天/30天/90天/1年 | σ_T = stdev(最近T天的DLR) * sqrt(365) |
+| 7天、30天、60天、90天、180天、1年、成立以来 | σ_T = stdev(最近T天的DLR) * sqrt(365) |
 
 **说明**: 当RCU的DLR为0时，计算σ时不需跳过该点
 
@@ -319,7 +337,7 @@
 | (1+R_twr)^(365/周期天数) - 1 | R_twr和周期天数必须来自同一时间窗口 |
 
 **时间窗口选择**:
-- 标准统计: 7天、30天、90天、180天、1年
+- 标准统计: 1天、7天、30天、60天、90天、180天、1年、成立以来
 - 今年以来: 最新更新日期 - 1月1日
 - 投资以来:
   - 有持有中订单: 最新更新日期 - 第一笔申购订单NAV确认日期(剔除取消订单)
@@ -361,7 +379,7 @@
 
 ### 时间范围选择
 
-- **默认时间范围**: 1天、7天、30天、90天(滚动展示，对应图表)
+- **默认时间范围**: 1天、7天、30天、60天、90天、180天、1年、成立以来
 - **自定义时间范围**: 前端选择时间范围和统计时间节点，区间为[开始时间，结束时间)，对应表格
 
 ## 4. 常见问题与解决方案
