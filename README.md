@@ -221,8 +221,8 @@
 
 - **典型应用场景举例**:
 - 1) 查询特定类型的基金/策略时需要关联多表进行查询，比如要查询多空类策略：
-  select rcus.* from rcus, rcu_label, rcu_to_rcu_label where rcus.id = rcu_to_rcu_label.rcu_id and rcu_to_rcu_label.rcu_label_id = rcu_label.id and rcu_label.`name` = "longshort"
-  using lable_list in risk_fund_strategies_info_draft to determining whether a strategy is public or private.
+  <pre> select rcus.* from rcus, rcu_label, rcu_to_rcu_label where rcus.id = rcu_to_rcu_label.rcu_id and rcu_to_rcu_label.rcu_label_id = rcu_label.id and rcu_label.`name` = "longshort"
+  using lable_list in risk_fund_strategies_info_draft to determining whether a strategy is public or private  </pre>
   **策略类型标签映射表**
   | 策略类型 | 可能的标签值 | 常见命名模式 |
   |---------|------------|------------|
@@ -236,13 +236,20 @@
   | 期权策略 | "Options Strategy", "Options" |  product_strategy 或 Lable中包含"Options"、"期权" |
   
 - 2) 基于业务系统数据查询某个策略的每日有效NAV数据案例：
-  > select fn.* from ( select *, ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY time_stamp DESC) as row_num from fund_two.fund_nav fn where is_daily_first = 1 and status = 1 and not (upper(fn.product_name) like '%TEST%' or fn.product_name like '%测试%') ) fn left join fund_two.product p on fn.product_id = p.product_id where row_num = 1 and p.status != 3
+  <pre> select fn.* from ( select *, ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY time_stamp DESC) as row_num from fund_two.fund_nav fn where is_daily_first = 1 and status = 1 and not (upper(fn.product_name) like '%TEST%' or fn.product_name like '%测试%') ) fn left join fund_two.product p on fn.product_id = p.product_id where row_num = 1 and p.status != 3  </pre>
   > 如果要分析费前NAV数据，通常业务系统中的费前 NAV 数据，因为有标记正常/异常、异常阈值的拦截，比riskmgt.risk_fund_strategies_info_draft里的数据更准确可靠一些。必要的情况可以可以两份数据对比参考。
-  
+  > fund_two.poduct表中字段含义：case when product.status=2 then 'listed' when product.status=1 then 'unlisted' when product.status=3 then ‘cleared’ else p.status end as product_status
+  > fund_two.fund_nav中字段含义：case when fund_nav.status=2 then 'ABNORMAL' when fund_nav.status=3 then 'Auto Cal. Closed' when fund_nav.status=1 then 'SUCCESS' else fund_nav.status end as nav_status_name
 
 - 3) 统计[xxx 指标]从好到差排名N名以内的某类策略的表现和报告：
   > 可优先查看 `product_statistical_data` 产品统计数据表里是否有现成的指标，比如“30天收益率前10名套利策略”，如果有的话直接用业务系统计算好的数据进行排名，效率更高，可以避免重新全量策略便利的工作量。
   > 确定了要分析的策略列表后，再根据需求内容和数据库中的数据进行具体分析
+
+- 4) 区分策略类型
+  <pre> SELECT p.prodduct_id,p.product_name,ps.name as 'strategy_name',,case when p.is_private_strategy=1 then '私域' else '公募' end as 'strategy_type' FROM fund_two.product_statistical_data d left join product p on p.product_id=d.product_id left join product_strategy ps on ps.strategy_id=p.strategy_id  </pre>
+  
+  > p.is_private_strategy是一级类型，用于区分私域策略或公募策略
+  > p.strategy_id是二级类型，用于区分策略的属性（如主观、CTA、套利），其id对应的名称解释在product_strategy表中的ps.name
   
 
 ## 2. 基金业绩与风险指标
